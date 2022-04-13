@@ -12,3 +12,5 @@ How to run the Strategies:
 4. Copy the python files along with the strategy folder(trading_strategies) into Metatrader 5 testing/files folder
 5. copy other python files - main_decisionmaker.py, output.py and actionWriter.py
 6. run main_decisionmaker.py
+
+Explained in this video https://www.youtube.com/watch?v=ovKgQdiQsHE&t=764s
