@@ -2,12 +2,13 @@
 import pandas as pd
 
 class output():
-    def __init__(self):
+    def __init__(self, target_folder):
         self.date_lst = []
         self.close_lst = []
         self.signal_lst = []
         self.prev_signal_lst = []
         self.action_lst = []
+        self.target_folder = target_folder
 
 
     def save_csv(self, contents, dframe, signal, prev_signal, predict_result):
@@ -26,4 +27,4 @@ class output():
         output_lst = [self.date_lst,  self.close_lst, self.signal_lst, self.prev_signal_lst, self.action_lst]
         df_output = pd.DataFrame(output_lst).transpose()
         df_output.columns=['date','close_price', 'signal','prev_signal','action']
-        df_output.to_csv("output.csv", index=False)
+        df_output.to_csv(f"{self.target_folder}/output.csv", index=False)
