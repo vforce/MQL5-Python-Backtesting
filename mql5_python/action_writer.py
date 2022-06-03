@@ -18,6 +18,11 @@ logger = logging.getLogger(__name__)
 
 
 class ActionWriter:
+    """
+    Watch the file `time_close_csv_test.csv` for new time bars, trigger the strategy to get signals,
+    and write the output to `action_test.txt`
+    """
+
     def __init__(self, trading_algrithm: DecisionMaker, input_file: str):
         self.trading_algrithm = trading_algrithm
         self.input_file = input_file
@@ -36,6 +41,7 @@ class ActionWriter:
 
     def convert_csv_file_to_history(self, filename: str) -> List[TimeBarContent]:
         """
+        Read file and convert to a list of TimeBarContent.
         pd.read_csv() is not working because of special characters in the input file
         :return:
         """
@@ -68,15 +74,20 @@ class ActionWriter:
         return results
 
     def run(self):
+        """
+        Watch the file `time_close_csv_test.csv` for new time bars, trigger the strategy to get signals,
+        To stop the server, press Ctrl+C
+        :return:
+        """
         filename = self.input_file
-        pre_Timebar = 0
         output_save = OutputWriter(target_folder=self.target_folder)
-        check_point = 0
 
         if os.path.isfile(filename) and os.stat(filename).st_size != 0:
             logger.info("File exist and not empty")
             # watch the file for multiple runs
             while True:
+                pre_Timebar = 0
+                check_point = 0
                 while True:
                     if os.stat(filename).st_size != 0:
                         try:
