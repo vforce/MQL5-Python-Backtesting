@@ -6,11 +6,13 @@ import pandas as pd
 import numpy as np
 import talib
 import json
+
+from mql5_python.decision_maker import DecisionMaker
 from output import output
 
 
 class ActionWriter:
-    def __init__(self, trading_algrithm, input_file):
+    def __init__(self, trading_algrithm: DecisionMaker, input_file: str):
         self.trading_algrithm = trading_algrithm
         self.input_file = input_file
         self.target_folder = os.path.dirname(input_file)
@@ -26,6 +28,27 @@ class ActionWriter:
         del_f = open(filename, "w")
         del_f.close()
 
+    def convert_csv_file_to_history(self, filename: str):
+        """
+        pd.read_csv() is not working because of special characters in the input file
+        :return:
+        """
+
+        with open(filename, encoding="utf-16") as f:
+            contents = f.read()
+        # you may also want to remove whitespace characters like `\n` at the end of each line
+        contents = contents.splitlines()
+        contents = [x.split("\t") for x in contents]
+        for i in range(len(contents)):
+            contents[i][0] = datetime.strptime(contents[i][0], "%Y.%m.%d %H:%M:%S")
+            contents[i][1] = float(contents[i][1])  # open
+            contents[i][2] = float(contents[i][2])  # high
+            contents[i][3] = float(contents[i][3])  # low
+            contents[i][4] = float(contents[i][4])  # close
+            contents[i][5] = int(contents[i][5])  # tick value
+
+        return contents
+
     def run(self):
         filename = self.input_file
         pre_Timebar = 0
@@ -38,21 +61,7 @@ class ActionWriter:
             while True:
                 if os.stat(filename).st_size != 0:
                     try:
-                        with open(filename, encoding="utf-16") as f:
-                            contents = f.read()
-                        # you may also want to remove whitespace characters like `\n` at the end of each line
-                        contents = contents.splitlines()
-                        contents = [x.split("\t") for x in contents]
-                        for i in range(len(contents)):
-                            contents[i][0] = datetime.strptime(
-                                contents[i][0], "%Y.%m.%d %H:%M:%S"
-                            )
-                            contents[i][1] = float(contents[i][1])  # open
-                            contents[i][2] = float(contents[i][2])  # high
-                            contents[i][3] = float(contents[i][3])  # low
-                            contents[i][4] = float(contents[i][4])  # close
-                            contents[i][5] = int(contents[i][5])  # tick value
-
+                        contents = self.convert_csv_file_to_history(filename)
                         newTimebar = contents[-1][0]
                         curr_position = contents[-1][-1]
                         curr_close_price = contents[-1][4]
