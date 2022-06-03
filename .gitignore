@@ -2,3 +2,4 @@ __pycache__
 action_test.txt
 output.csv
 .DS_Store
+.idea
