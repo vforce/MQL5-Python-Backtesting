@@ -45,8 +45,7 @@ class SimpleMAExponentialMA(AbstractStrategy):
         )
 
     def run(self, df: pd.DataFrame):
-        self.df = df
-        self.close = df["close"]
+        super().run(df)
         self.calculate_144ema()
         self.calculate_169ema()
         self.calculate_5sma()
