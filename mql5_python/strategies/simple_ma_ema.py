@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import pandas as pd
 import trading_strategies.visualise as v
 
@@ -6,6 +8,7 @@ import trading_strategies.visualise as v
 # This strategy uses a 5 day simple movinng average (SMA) for sell and buy signals and a
 # 144 period and 169 period exponential moving average (EMA) to determine trend direction
 from mql5_python.abstract_strategy import AbstractStrategy
+from mql5_python.commons import TradingSignals
 
 
 class SimpleMAExponentialMA(AbstractStrategy):
@@ -23,7 +26,7 @@ class SimpleMAExponentialMA(AbstractStrategy):
         self.df["5sma"] = self.df["close"].rolling(window=5).mean()
 
     def determine_signal(self, dframe):
-        action = 0  # hold
+        action = TradingSignals.Hold  # hold
 
         close = dframe["close"]
         ema_144 = dframe["144ema"]
@@ -32,24 +35,23 @@ class SimpleMAExponentialMA(AbstractStrategy):
 
         # SELL CRITERIA: if closing price is below SMA and 169-period EMA is above 144-period EMA
         if (close.iloc[-1] < sma_5.iloc[-1]) and (ema_169.iloc[-1] > ema_144.iloc[-1]):
-            action = -1
+            action = TradingSignals.Sell
         # BUY CRITERIA: closing price is above SMA and 144-period EMA is above 169-period EMA
         elif (close.iloc[-1] > sma_5.iloc[-1]) and (
             ema_144.iloc[-1] > ema_169.iloc[-1]
         ):
-            action = 1
+            action = TradingSignals.Buy
 
         return (
             action,
             ema_144.iloc[-1] - ema_169.iloc[-1],
         )
 
-    def run(self, df: pd.DataFrame):
-        super().run(df)
+    def run(self) -> Tuple[TradingSignals, pd.DataFrame]:
         self.calculate_144ema()
         self.calculate_169ema()
         self.calculate_5sma()
-        signal = self.determine_signal(self.df)
+        signal, _ = self.determine_signal(self.df)
 
         return signal, self.df
 

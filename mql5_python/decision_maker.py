@@ -1,6 +1,7 @@
 import pandas as pd
 
 from mql5_python.abstract_strategy import AbstractStrategy
+from mql5_python.commons import TradingSignals
 from sma_ema import SimpleMAExponentialMA
 
 
@@ -37,90 +38,36 @@ class DecisionMaker:
         print("-----")
         print("date: ", date)
         print("current price is: ", curr_close_price)
-
-        # Run strategy here #
-        # strategy = SimpleMAExponentialMA(history)
-        # strategy = AdxCrossover(history)
-        # strategy = AroonAdx(history)
-        # strategy = SMAMI(history)
-        # strategy = StochasticOscillatorNoExit(history)
-        # strategy = AroonIndicator(history)
-        # strategy = AwesomeOscillatorSaucer(history)
-        # strategy = BladeRunner(history)
-        # strategy = BollingerBandsAndRSI2(history)
-        # strategy = CciMacdPsar(history)
-        # strategy = DpoCandlestick(history)
-        # strategy = ElderRaySma(history)
-        # strategy = ThreeEma(history)
-        # strategy = EMACrossover(history)
-        # strategy = EMACrossoverMACD(history)
-        # strategy = EMACrossoverRSI(history)
-        # strategy = EMACrossover(history)
-        # strategy = WilliamsStochastic(history)
-        # strategy = MACDCrossover(history)
-        # strategy = MacdRsiSma(history)
-        # strategy = MACDStochasticCrossover(history)
-        # strategy = Rsi2(history)
-        # strategy = Rsi8020(history)
-        # strategy = TripleBollingerBands(history)
-        # strategy = TrixEma(history)
-        # strategy = TrixRsi(history)
-        # strategy = VortexCrossover(history)
-        # strategy = VortexSma(history)
-        # strategy = WilliamsIndicator(history)
-        # strategy = DonchianBreakout(history)
-        # strategy = CommodityChannelIndex(history)
-
-        signal_lst, df = self.strategy.run(history)
-        # signal_lst, df = strategy.run_aroon_adx()
-        # signal_lst, df = strategy.run_awesome_oscillator_saucer()
-        # signal_lst, df = strategy.run_bollingerbands_rsi_2()
-        # signal_lst, df = strategy.run_dpo_candlestick()
-        # signal_lst, df = strategy.run_elder_ray()
-        # signal_lst, df = strategy.run_ema_3()
-        # signal_lst, df = strategy.run_ema_crossover()
-        # signal_lst, df = strategy.run_ema_crossover_macd()
-        # signal_lst, df = strategy.run_ema_crossover_rsi()
-        # signal_lst, df = strategy.run_ema_crossover()
-        # signal_lst, df = strategy.run_williams_stochastic()
-        # signal_lst, df = strategy.run_macd_crossover()
-        # signal_lst, df = strategy.run_macd_rsi_sma()
-        # signal_lst, df = strategy.run_macd_stochastic_crossover()
-        # signal_lst, df = strategy.run_rsi2()
-        # signal_lst, df = strategy.run_triple_bollinger_bands()
-        # signal_lst, df = strategy.run_trix_ema()
-        # signal_lst, df = strategy.run_trix_rsi()
-        # signal_lst, df = strategy.run_trix_rsi()
-        # signal_lst, df = strategy.run_vortex_sma()
-        # signal_lst, df = strategy.run_williams_indicator()
-        # signal_lst, df = strategy.run_donchian_breakout()
-        # signal_lst, df = strategy.run()
-        signal = signal_lst[0]
+        self.strategy.init_df(history_dataframe)
+        signal, df = self.strategy.run()
 
         # first check if stop loss/take profit has been triggered
 
-        if self.prev_signal == 1 and (
+        if self.prev_signal == TradingSignals.Buy and (
             (self.curr_take_profit != 0 and curr_high_price >= self.curr_take_profit)
             or (self.curr_stop_loss != 0 and curr_low_price <= self.curr_stop_loss)
         ):
-            self.prev_signal = 0  # since the sl/tp was triggered, we reset position
+            self.prev_signal = (
+                TradingSignals.Hold
+            )  # since the sl/tp was triggered, we reset position
 
-        if self.prev_signal == -1 and (
+        if self.prev_signal == TradingSignals.Sell and (
             (self.curr_take_profit != 0 and curr_low_price <= self.curr_take_profit)
             or (self.curr_stop_loss != 0 and curr_high_price >= self.curr_stop_loss)
         ):
-            self.prev_signal = 0  # since the sl/tp was triggered, we reset position
+            self.prev_signal = (
+                TradingSignals.Hold
+            )  # since the sl/tp was triggered, we reset position
 
         print("signal: ", signal)
         print("prev_signal: ", self.prev_signal)
         # then we look at the signal returned
-        if signal == 1:
+        if signal == TradingSignals.Buy:
 
             # if previous signal was a sell, close off the position
-            if self.prev_signal == -1:
-                self.prev_signal = (
-                    0  # make previous signal 0 as we don't have an active position
-                )
+            if self.prev_signal == TradingSignals.Sell:
+                # make previous signal 0 as we don't have an active position
+                self.prev_signal = TradingSignals.Hold
                 return (
                     {"action": "POSITION_CLOSE_SYMBOL"},
                     signal,
@@ -129,7 +76,7 @@ class DecisionMaker:
                 )  # close
 
             # if previous signal was 0, there was no active position, open a long position
-            if self.prev_signal == 0:
+            if self.prev_signal == TradingSignals.Hold:
                 self.prev_signal = signal
                 self.prev_traded_price = curr_close_price
                 self.curr_stop_loss = curr_close_price + stop_loss
@@ -172,13 +119,12 @@ class DecisionMaker:
                 else:
                     return {"action": "skip"}, signal, self.prev_signal, df
 
-        if signal == -1:
+        if signal == TradingSignals.Sell:
 
             # if previous signal was a buy, close off the position
-            if self.prev_signal == 1:
-                self.prev_signal = (
-                    0  # make previous signal 0 as we don't have an active position
-                )
+            if self.prev_signal == TradingSignals.Buy:
+                # make previous signal 0 as we don't have an active position
+                self.prev_signal = TradingSignals.Hold
                 return (
                     {"action": "POSITION_CLOSE_SYMBOL"},
                     signal,
@@ -187,7 +133,7 @@ class DecisionMaker:
                 )  # close
 
             # if previous signal was 0, there was no active position, open a short position
-            if self.prev_signal == 0:
+            if self.prev_signal == TradingSignals.Hold:
                 self.prev_signal = signal
                 self.prev_traded_price = curr_close_price
                 self.curr_stop_loss = curr_close_price - stop_loss
@@ -228,5 +174,5 @@ class DecisionMaker:
                 else:
                     return {"action": "skip"}, signal, self.prev_signal, df
 
-        if signal == 0:
+        if signal == TradingSignals.Hold:
             return {"action": "skip"}, signal, self.prev_signal, df
