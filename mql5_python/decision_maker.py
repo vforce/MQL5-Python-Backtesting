@@ -2,7 +2,6 @@ import pandas as pd
 
 from mql5_python.abstract_strategy import AbstractStrategy
 from mql5_python.commons import TradingSignals
-from sma_ema import SimpleMAExponentialMA
 
 
 class DecisionMaker:
