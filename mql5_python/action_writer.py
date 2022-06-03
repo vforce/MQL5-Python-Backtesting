@@ -9,7 +9,6 @@ import json
 
 from mql5_python.decision_maker import DecisionMaker
 from mql5_python.output_writer import OutputWriter
-from output import output
 
 
 class ActionWriter:
