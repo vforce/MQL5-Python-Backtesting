@@ -3,5 +3,9 @@ import pandas as pd
 
 
 class AbstractStrategy(abc.ABC):
-    def run(self, df: pd.DataFrame):
+    def run(self):
         raise NotImplementedError()
+
+    def init_df(self, df: pd.DataFrame):
+        self.df = df
+        self.close = df["close"]

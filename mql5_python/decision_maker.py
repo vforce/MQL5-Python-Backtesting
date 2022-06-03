@@ -37,7 +37,7 @@ class DecisionMaker:
         print("-----")
         print("date: ", date)
         print("current price is: ", curr_close_price)
-
+        self.strategy.init_df(history_dataframe)
         # Run strategy here #
         # strategy = SimpleMAExponentialMA(history)
         # strategy = AdxCrossover(history)
@@ -71,7 +71,7 @@ class DecisionMaker:
         # strategy = DonchianBreakout(history)
         # strategy = CommodityChannelIndex(history)
 
-        signal_lst, df = self.strategy.run(history)
+        signal_lst, df = self.strategy.run()
         # signal_lst, df = strategy.run_aroon_adx()
         # signal_lst, df = strategy.run_awesome_oscillator_saucer()
         # signal_lst, df = strategy.run_bollingerbands_rsi_2()
