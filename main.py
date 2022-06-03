@@ -44,6 +44,11 @@ import pandas as pd
 
 # non-optional import:
 from mql5_python.strategies.simple_ma_ema import SimpleMAExponentialMA
+import logging
+
+logging.basicConfig(level=logging.INFO)
+
+logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
     file_path = "/Users/kdang/Library/Application Support/MetaTrader 5/Bottles/metatrader5/drive_c/Program Files/MetaTrader 5/Tester/Agent-127.0.0.1-3000/MQL5/Files/time_close_csv_test.csv"

@@ -12,6 +12,9 @@ import json
 from mql5_python.commons import TimeBarContent
 from mql5_python.decision_maker import DecisionMaker
 from mql5_python.output_writer import OutputWriter
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ActionWriter:
@@ -71,7 +74,7 @@ class ActionWriter:
         check_point = 0
 
         if os.path.isfile(filename) and os.stat(filename).st_size != 0:
-            print("File exist and not empty")
+            logger.info("File exist and not empty")
             # watch the file for multiple runs
             while True:
                 while True:
@@ -83,9 +86,6 @@ class ActionWriter:
                             newTimebar = contents[-1].datetime
                             curr_position = contents[-1].current_status
                             curr_close_price = contents[-1].close
-                            print(
-                                f"pretimebar ={pre_Timebar}, newtimebar = {newTimebar}"
-                            )
                             if curr_position == "Ending":
                                 # print(">>>------------------------<<<")
                                 output_save.output_csv()
@@ -96,9 +96,9 @@ class ActionWriter:
                                 if pre_Timebar != newTimebar:
                                     pre_Timebar = copy.deepcopy(newTimebar)
 
-                                    print("Timebar: ", pre_Timebar)
-                                    print("curr_close_price: ", curr_close_price)
-                                    print("curr_position", curr_position)
+                                    logger.debug(
+                                        f"Timebar: {pre_Timebar}, close price = {curr_close_price}, cur position = {curr_position}"
+                                    )
 
                                     # code from example2.py, send the data to the main_DecisionMaker.py
                                     (
@@ -111,7 +111,7 @@ class ActionWriter:
                                         raise ValueError(
                                             "Value must return a dictionary type"
                                         )
-                                    print("predict_result", "\t", predict_result)
+                                    logger.info(f"predict_result\t {predict_result}")
 
                                     # write the result to txt or csv
                                     self.write_strategies(predict_result)
@@ -142,4 +142,4 @@ class ActionWriter:
                         time.sleep(0.001)
                 time.sleep(0.1)
         else:
-            print("File not exist")
+            logger.error("File not exist")

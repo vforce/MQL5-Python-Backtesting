@@ -6,15 +6,25 @@ import pandas as pd
 
 from mql5_python.abstract_strategy import AbstractStrategy
 from mql5_python.commons import TradingSignals, TimeBarContent
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class DecisionMaker:
-    def __init__(self, strategy: AbstractStrategy):
+    def __init__(
+        self,
+        strategy: AbstractStrategy,
+        take_profit: float = 0.0050,
+        stop_loss: float = -0.0020,
+    ):
         self.prev_signal = 0  # what the previous signal was was e.g. 1 for buy , -1 for sell, 0 for hold
         self.prev_traded_price = 0  # this is the previously traded price for an exisiting position (entry price)
         self.curr_stop_loss = 0  # current stop loss
         self.curr_take_profit = 0  # current take profit
         self.strategy = strategy
+        self.take_profit = take_profit
+        self.stop_loss = stop_loss
 
     # for the last candle (data) of the given currency (symbol), provided its historical data(history) predict whether to buy or sell
     def predict(self, history: List[TimeBarContent]):
@@ -23,6 +33,7 @@ class DecisionMaker:
         history_dataframe = pd.DataFrame(
             [asdict(h) for h in history],
         )
+        print("history dataframe", history_dataframe.head())
 
         # extract meaningful values
         prev_close_price = history[-2].close
@@ -33,13 +44,12 @@ class DecisionMaker:
 
         # adjust TP/SL values here, remember to x100 if testing on JPY currency
         # take_profit = 0.0200
-        take_profit = 0.0050
+        take_profit = self.take_profit
         # stop_loss = -0.0250
-        stop_loss = -0.0020
+        stop_loss = self.stop_loss
 
-        print("-----")
-        print("date: ", date)
-        print("current price is: ", curr_close_price)
+        logger.info("-----")
+        logger.info(f"date: {date}, close = {curr_close_price}")
         self.strategy.init_df(history_dataframe)
         signal, df = self.strategy.run()
 
@@ -61,8 +71,7 @@ class DecisionMaker:
                 TradingSignals.Hold
             )  # since the sl/tp was triggered, we reset position
 
-        print("signal: ", signal)
-        print("prev_signal: ", self.prev_signal)
+        logger.info(f"signal: {signal}, prev signal = {self.prev_signal}")
         # then we look at the signal returned
         if signal == TradingSignals.Buy:
 
