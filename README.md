@@ -12,11 +12,9 @@ MQL5 based backtesting using python
 
 - Copy the files in MQL5 folder into `ROOT_DIR/MQL5/Experts`
 - On MT5, open the Strategy Tester interface. On tab `Settings`, select the expert `py_json_csv_0204.ex5`. Select the duration you want to test. Make sure to tick `visual mode with the display of charts....`. Click start to start an empty test for now.
-- On the tester's window, set the slider speed to slowest.
 - Make sure that in the folder `ROOT_DIR/Tester/Agent-.../MQL5/Files/`, there's a file name `time_close_csv_test.csv`. Once you have this file, you can start running the python file.
-- Stop the backtesting if you're running it. Make sure that the speed slider is at lowest. This means the backtesting has started but not been running yet.
 - Now run the `main_DecisionMaker.py` file
-- On the tester's window, set the slider speed to highest (or whatever speed you want). You should start seeing your agent making trades.
+- Go back to the main window, press `Start` in the `Strategy Tester` tab to start back testing.
 
 # OLD instruction
 

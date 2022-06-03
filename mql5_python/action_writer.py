@@ -57,68 +57,69 @@ class ActionWriter:
 
         if os.path.isfile(filename) and os.stat(filename).st_size != 0:
             print("File exist and not empty")
-
+            # watch the file for multiple runs
             while True:
-                if os.stat(filename).st_size != 0:
-                    try:
-                        contents = self.convert_csv_file_to_history(filename)
-                        newTimebar = contents[-1][0]
-                        curr_position = contents[-1][-1]
-                        curr_close_price = contents[-1][4]
-                        if curr_position == "Ending":
-
-                            print(">>>------------------------<<<")
-                            output_save.output_csv()
-                            print(">>> Server Stop <<<")
-                            break
-
-                        else:
-                            if pre_Timebar != newTimebar:
-                                pre_Timebar = copy.deepcopy(newTimebar)
-
-                                print("Timebar: ", pre_Timebar)
-                                print("curr_close_price: ", curr_close_price)
-                                print("curr_position", curr_position)
-
-                                # code from example2.py, send the data to the main_DecisionMaker.py
-                                (
-                                    predict_result,
-                                    signal,
-                                    prev_signal,
-                                    df,
-                                ) = self.trading_algrithm.predict(contents)
-                                if type(predict_result) is not dict:
-                                    raise ValueError(
-                                        "Value must return a dictionary type"
-                                    )
-                                print("predict_result", "\t", predict_result)
-
-                                # write the result to txt or csv
-                                self.write_strategies(predict_result)
-                                # self.cleanFile(filename)
-
-                                self.save2csv(
-                                    output_save,
-                                    predict_result,
-                                    contents,
-                                    signal,
-                                    prev_signal,
-                                    df,
-                                )
-
-                                check_point += 1
-
-                                if check_point % 50 == 0:
-                                    output_save.output_csv()
+                while True:
+                    if os.stat(filename).st_size != 0:
+                        try:
+                            contents = self.convert_csv_file_to_history(filename)
+                            newTimebar = contents[-1][0]
+                            curr_position = contents[-1][-1]
+                            curr_close_price = contents[-1][4]
+                            if curr_position == "Ending":
+                                # print(">>>------------------------<<<")
+                                output_save.output_csv()
+                                # print(">>> Server Stop <<<")
+                                break
 
                             else:
-                                time.sleep(0.003)
+                                if pre_Timebar != newTimebar:
+                                    pre_Timebar = copy.deepcopy(newTimebar)
 
-                    except:
-                        continue
+                                    print("Timebar: ", pre_Timebar)
+                                    print("curr_close_price: ", curr_close_price)
+                                    print("curr_position", curr_position)
 
-                else:
-                    # print("File is empty")
-                    time.sleep(0.001)
+                                    # code from example2.py, send the data to the main_DecisionMaker.py
+                                    (
+                                        predict_result,
+                                        signal,
+                                        prev_signal,
+                                        df,
+                                    ) = self.trading_algrithm.predict(contents)
+                                    if type(predict_result) is not dict:
+                                        raise ValueError(
+                                            "Value must return a dictionary type"
+                                        )
+                                    print("predict_result", "\t", predict_result)
+
+                                    # write the result to txt or csv
+                                    self.write_strategies(predict_result)
+                                    # self.cleanFile(filename)
+
+                                    self.save2csv(
+                                        output_save,
+                                        predict_result,
+                                        contents,
+                                        signal,
+                                        prev_signal,
+                                        df,
+                                    )
+
+                                    check_point += 1
+
+                                    if check_point % 50 == 0:
+                                        output_save.output_csv()
+
+                                else:
+                                    time.sleep(0.003)
+
+                        except:
+                            continue
+
+                    else:
+                        # print("File is empty")
+                        time.sleep(0.001)
+                time.sleep(0.1)
         else:
             print("File not exist")
