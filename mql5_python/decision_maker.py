@@ -1,7 +1,11 @@
+from dataclasses import asdict
+
+from typing import List
+
 import pandas as pd
 
 from mql5_python.abstract_strategy import AbstractStrategy
-from mql5_python.commons import TradingSignals
+from mql5_python.commons import TradingSignals, TimeBarContent
 
 
 class DecisionMaker:
@@ -13,20 +17,19 @@ class DecisionMaker:
         self.strategy = strategy
 
     # for the last candle (data) of the given currency (symbol), provided its historical data(history) predict whether to buy or sell
-    def predict(self, history):
+    def predict(self, history: List[TimeBarContent]):
 
         # convert history to pandas dataframe
         history_dataframe = pd.DataFrame(
-            history,
-            columns=("time", "open", "high", "low", "close", "tick_volume", "pos"),
+            [asdict(h) for h in history],
         )
 
         # extract meaningful values
-        prev_close_price = history[-2][4]
-        curr_close_price = history[-1][4]
-        curr_high_price = history[-1][2]
-        curr_low_price = history[-1][3]
-        date = history[-1][0]
+        prev_close_price = history[-2].close
+        curr_close_price = history[-1].close
+        curr_high_price = history[-1].high
+        curr_low_price = history[-1].low
+        date = history[-1].datetime
 
         # adjust TP/SL values here, remember to x100 if testing on JPY currency
         # take_profit = 0.0200
