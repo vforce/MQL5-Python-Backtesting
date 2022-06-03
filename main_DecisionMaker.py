@@ -1,7 +1,6 @@
 # import your trading strategy here
 # from sma_ema import SimpleMAExponentialMA
 from mql5_python.decision_maker import DecisionMaker
-from trading_strategies.sma_ema import SimpleMAExponentialMA
 
 # from trading_strategies.adx_crossover import AdxCrossover
 # from trading_strategies.aroon_adx import AroonAdx
@@ -44,10 +43,10 @@ import pandas as pd
 
 # non-optional import:
 from actionWriter import actionWriter
-
+from mql5_python.strategies.simple_ma_ema import SimpleMAExponentialMA
 
 if __name__ == "__main__":
     file_path = "/Users/kdang/Library/Application Support/MetaTrader 5/Bottles/metatrader5/drive_c/Program Files/MetaTrader 5/Tester/Agent-127.0.0.1-3000/MQL5/Files/time_close_csv_test.csv"
-    ai = DecisionMaker()
+    ai = DecisionMaker(SimpleMAExponentialMA())
     executor = actionWriter(ai, file_path)
     executor.run()

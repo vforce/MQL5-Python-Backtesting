@@ -1,14 +1,16 @@
 import pandas as pd
 
+from mql5_python.abstract_strategy import AbstractStrategy
 from sma_ema import SimpleMAExponentialMA
 
 
 class DecisionMaker:
-    def __init__(self):
+    def __init__(self, strategy: AbstractStrategy):
         self.prev_signal = 0  # what the previous signal was was e.g. 1 for buy , -1 for sell, 0 for hold
         self.prev_traded_price = 0  # this is the previously traded price for an exisiting position (entry price)
         self.curr_stop_loss = 0  # current stop loss
         self.curr_take_profit = 0  # current take profit
+        self.strategy = strategy
 
     # for the last candle (data) of the given currency (symbol), provided its historical data(history) predict whether to buy or sell
     def predict(self, history):
@@ -37,7 +39,7 @@ class DecisionMaker:
         print("current price is: ", curr_close_price)
 
         # Run strategy here #
-        strategy = SimpleMAExponentialMA(history)
+        # strategy = SimpleMAExponentialMA(history)
         # strategy = AdxCrossover(history)
         # strategy = AroonAdx(history)
         # strategy = SMAMI(history)
@@ -69,7 +71,7 @@ class DecisionMaker:
         # strategy = DonchianBreakout(history)
         # strategy = CommodityChannelIndex(history)
 
-        signal_lst, df = strategy.run_sma_ema()
+        signal_lst, df = self.strategy.run(history)
         # signal_lst, df = strategy.run_aroon_adx()
         # signal_lst, df = strategy.run_awesome_oscillator_saucer()
         # signal_lst, df = strategy.run_bollingerbands_rsi_2()
