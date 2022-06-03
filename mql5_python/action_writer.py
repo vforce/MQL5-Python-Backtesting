@@ -8,6 +8,7 @@ import talib
 import json
 
 from mql5_python.decision_maker import DecisionMaker
+from mql5_python.output_writer import OutputWriter
 from output import output
 
 
@@ -52,7 +53,7 @@ class ActionWriter:
     def run(self):
         filename = self.input_file
         pre_Timebar = 0
-        output_save = output(target_folder=self.target_folder)
+        output_save = OutputWriter(target_folder=self.target_folder)
         check_point = 0
 
         if os.path.isfile(filename) and os.stat(filename).st_size != 0:
