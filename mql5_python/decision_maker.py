@@ -5,7 +5,13 @@ from typing import List
 import pandas as pd
 
 from mql5_python.abstract_strategy import AbstractStrategy
-from mql5_python.commons import TradingSignals, TimeBarContent
+from mql5_python.commons import (
+    TradingSignals,
+    TimeBarContent,
+    DecisionMakerOutput,
+    MQL5Order,
+    MQL5OrderTypes,
+)
 import logging
 
 logger = logging.getLogger(__name__)
@@ -27,13 +33,13 @@ class DecisionMaker:
         self.stop_loss = stop_loss
 
     # for the last candle (data) of the given currency (symbol), provided its historical data(history) predict whether to buy or sell
-    def predict(self, history: List[TimeBarContent]):
+    def predict(self, history: List[TimeBarContent]) -> DecisionMakerOutput:
 
         # convert history to pandas dataframe
         history_dataframe = pd.DataFrame(
             [asdict(h) for h in history],
         )
-        print("history dataframe", history_dataframe.head())
+        # print("history dataframe", history_dataframe.head())
 
         # extract meaningful values
         prev_close_price = history[-2].close
@@ -79,11 +85,13 @@ class DecisionMaker:
             if self.prev_signal == TradingSignals.Sell:
                 # make previous signal 0 as we don't have an active position
                 self.prev_signal = TradingSignals.Hold
-                return (
-                    {"action": "POSITION_CLOSE_SYMBOL"},
-                    signal,
-                    self.prev_signal,
-                    df,
+                return DecisionMakerOutput(
+                    mql5_action=MQL5Order(
+                        action=MQL5OrderTypes.Close,
+                    ),
+                    signal=signal,
+                    prev_signal=self.prev_signal,
+                    df=df,
                 )  # close
 
             # if previous signal was 0, there was no active position, open a long position
@@ -92,15 +100,15 @@ class DecisionMaker:
                 self.prev_traded_price = curr_close_price
                 self.curr_stop_loss = curr_close_price + stop_loss
                 self.curr_take_profit = curr_close_price + take_profit
-                return (
-                    {
-                        "action": "ORDER_TYPE_BUY",  # buy
-                        "takeprofit": curr_close_price + take_profit,
-                        "stoploss": curr_close_price + stop_loss,
-                    },
-                    signal,
-                    self.prev_signal,
-                    df,
+                return DecisionMakerOutput(
+                    mql5_action=MQL5Order(
+                        action=MQL5OrderTypes.Buy,
+                        takeprofit=curr_close_price + take_profit,
+                        stoploss=curr_close_price + stop_loss,
+                    ),
+                    signal=signal,
+                    prev_signal=self.prev_signal,
+                    df=df,
                 )
 
             # otherwise, the previous signal was another buy (pre_signal == 1)
@@ -115,20 +123,25 @@ class DecisionMaker:
                 ):
                     self.curr_stop_loss = curr_close_price + stop_loss
                     self.curr_take_profit = curr_close_price + take_profit
-                    return (
-                        {
-                            "action": "POSITION_MODIFY",
-                            "takeprofit": curr_close_price + take_profit,
-                            "stoploss": curr_close_price + stop_loss,
-                        },
-                        signal,
-                        self.prev_signal,
-                        df,
+                    return DecisionMakerOutput(
+                        mql5_action=MQL5Order(
+                            action=MQL5OrderTypes.Modify,
+                            takeprofit=curr_close_price + take_profit,
+                            stoploss=curr_close_price + stop_loss,
+                        ),
+                        signal=signal,
+                        prev_signal=self.prev_signal,
+                        df=df,
                     )
 
                 # if its a lower buy signal we dont change our take profit or stop loss
                 else:
-                    return {"action": "skip"}, signal, self.prev_signal, df
+                    return DecisionMakerOutput(
+                        mql5_action=MQL5Order(action=MQL5OrderTypes.Skip),
+                        signal=signal,
+                        prev_signal=self.prev_signal,
+                        df=df,
+                    )
 
         if signal == TradingSignals.Sell:
 
@@ -136,11 +149,13 @@ class DecisionMaker:
             if self.prev_signal == TradingSignals.Buy:
                 # make previous signal 0 as we don't have an active position
                 self.prev_signal = TradingSignals.Hold
-                return (
-                    {"action": "POSITION_CLOSE_SYMBOL"},
-                    signal,
-                    self.prev_signal,
-                    df,
+                return DecisionMakerOutput(
+                    mql5_action=MQL5Order(
+                        action=MQL5OrderTypes.Close,
+                    ),
+                    signal=signal,
+                    prev_signal=self.prev_signal,
+                    df=df,
                 )  # close
 
             # if previous signal was 0, there was no active position, open a short position
@@ -149,15 +164,15 @@ class DecisionMaker:
                 self.prev_traded_price = curr_close_price
                 self.curr_stop_loss = curr_close_price - stop_loss
                 self.curr_take_profit = curr_close_price - take_profit
-                return (
-                    {
-                        "action": "ORDER_TYPE_SELL",  # sell
-                        "takeprofit": curr_close_price - take_profit,
-                        "stoploss": curr_close_price - stop_loss,
-                    },
-                    signal,
-                    self.prev_signal,
-                    df,
+                return DecisionMakerOutput(
+                    mql5_action=MQL5Order(
+                        action=MQL5OrderTypes.Sell,
+                        takeprofit=curr_close_price - self.curr_take_profit,
+                        stoploss=curr_close_price - self.curr_stop_loss,
+                    ),
+                    signal=signal,
+                    prev_signal=self.prev_signal,
+                    df=df,
                 )
 
             # otherwise, the previous signal was another sell
@@ -170,20 +185,30 @@ class DecisionMaker:
                 ):
                     self.curr_stop_loss = curr_close_price - stop_loss
                     self.curr_take_profit = curr_close_price - take_profit
-                    return (
-                        {
-                            "action": "POSITION_MODIFY",
-                            "takeprofit": curr_close_price - take_profit,
-                            "stoploss": curr_close_price - stop_loss,
-                        },
-                        signal,
-                        self.prev_signal,
-                        df,
+                    return DecisionMakerOutput(
+                        mql5_action=MQL5Order(
+                            action=MQL5OrderTypes.Modify,
+                            takeprofit=curr_close_price - take_profit,
+                            stoploss=curr_close_price - stop_loss,
+                        ),
+                        signal=signal,
+                        prev_signal=self.prev_signal,
+                        df=df,
                     )
 
                 # if its a lower sell signal we dont change our take profit or stop loss aka do nothing
                 else:
-                    return {"action": "skip"}, signal, self.prev_signal, df
+                    return DecisionMakerOutput(
+                        mql5_action=MQL5Order(action=MQL5OrderTypes.Skip),
+                        signal=signal,
+                        prev_signal=self.prev_signal,
+                        df=df,
+                    )
 
         if signal == TradingSignals.Hold:
-            return {"action": "skip"}, signal, self.prev_signal, df
+            return DecisionMakerOutput(
+                mql5_action=MQL5Order(action=MQL5OrderTypes.Skip),
+                signal=signal,
+                prev_signal=self.prev_signal,
+                df=df,
+            )

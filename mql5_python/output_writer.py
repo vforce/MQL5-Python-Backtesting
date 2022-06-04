@@ -1,4 +1,8 @@
+from typing import List
+
 import pandas as pd
+
+from mql5_python.commons import MQL5Order, TradingSignals, TimeBarContent
 
 
 class OutputWriter:
@@ -10,15 +14,21 @@ class OutputWriter:
         self.action_lst = []
         self.target_folder = target_folder
 
-    def save_csv(self, contents, dframe, signal, prev_signal, predict_result):
-        date = contents[-1][0]
+    def save_csv(
+        self,
+        contents: List[TimeBarContent],
+        dframe,
+        signal: TradingSignals,
+        prev_signal: TradingSignals,
+        predict_result: MQL5Order,
+    ):
+        date = contents[-1].datetime
         close = dframe["close"].iloc[-1]
-
         self.date_lst.append(date)
         self.close_lst.append(close)
-        self.signal_lst.append(signal)
-        self.prev_signal_lst.append(prev_signal)
-        self.action_lst.append(predict_result["action"])
+        self.signal_lst.append(signal.value)
+        self.prev_signal_lst.append(prev_signal.value)
+        self.action_lst.append(predict_result.action.value)
 
     def output_csv(self):
         output_lst = [
@@ -30,4 +40,6 @@ class OutputWriter:
         ]
         df_output = pd.DataFrame(output_lst).transpose()
         df_output.columns = ["date", "close_price", "signal", "prev_signal", "action"]
+        print("-- df_output\n", df_output)
         df_output.to_csv(f"{self.target_folder}/output.csv", index=False)
+        print("wrote output")

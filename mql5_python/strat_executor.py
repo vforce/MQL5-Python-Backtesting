@@ -9,7 +9,7 @@ import numpy as np
 import talib
 import json
 
-from mql5_python.commons import TimeBarContent
+from mql5_python.commons import TimeBarContent, MQL5Order
 from mql5_python.decision_maker import DecisionMaker
 from mql5_python.output_writer import OutputWriter
 import logging
@@ -17,7 +17,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class ActionWriter:
+class StratExecutor:
     """
     Watch the file `time_close_csv_test.csv` for new time bars, trigger the strategy to get signals,
     and write the output to `action_test.txt`
@@ -28,12 +28,23 @@ class ActionWriter:
         self.input_file = input_file
         self.target_folder = os.path.dirname(input_file)
 
-    def write_strategies(self, data):
+    def write_strategies(self, data: MQL5Order):
+        logger.info(f"write strategy output {data.as_dict()}")
         with open(f"{self.target_folder}/action_test.txt", "w") as outfile:
-            json.dump(data, outfile)
+            json.dump(data.as_dict(), outfile)
 
-    def save2csv(self, output_save, predict_result, contents, signal, prev_signal, df):
+    def save2csv(
+        self,
+        output_save,
+        predict_result: MQL5Order,
+        contents: List[TimeBarContent],
+        signal,
+        prev_signal,
+        df,
+    ):
+        print("--- calling save2csv")
         output_save.save_csv(contents, df, signal, prev_signal, predict_result)
+        print("-- called save2csv")
 
     def cleanFile(self, filename):
         del_f = open(filename, "w")
@@ -112,15 +123,18 @@ class ActionWriter:
                                     )
 
                                     # code from example2.py, send the data to the main_DecisionMaker.py
-                                    (
-                                        predict_result,
-                                        signal,
-                                        prev_signal,
-                                        df,
-                                    ) = self.trading_algrithm.predict(contents)
-                                    if type(predict_result) is not dict:
+
+                                    decision_maker_output = (
+                                        self.trading_algrithm.predict(contents)
+                                    )
+                                    predict_result = decision_maker_output.mql5_action
+                                    signal = decision_maker_output.signal
+                                    prev_signal = decision_maker_output.prev_signal
+                                    df = decision_maker_output.df
+
+                                    if not isinstance(predict_result, MQL5Order):
                                         raise ValueError(
-                                            "Value must return a dictionary type"
+                                            f"Predition result must be of type {MQL5Order.__class__.__name__}"
                                         )
                                     logger.info(f"predict_result\t {predict_result}")
 
