@@ -9,9 +9,8 @@ import numpy as np
 import talib
 import json
 
-from mql5_python.commons import TimeBarContent, MQL5Order
+from mql5_python.commons import TimeBarContent, MQL5Order, TradingSignals
 from mql5_python.decision_maker import DecisionMaker
-from mql5_python.output_writer import OutputWriter
 import logging
 
 logger = logging.getLogger(__name__)
@@ -23,28 +22,63 @@ class StratExecutor:
     and write the output to `action_test.txt`
     """
 
+    class __OutputWriter:
+        """
+        Helper class to help write output to folder. Not supposed to be used elsewhere, therefore
+        putting it as a private class
+        """
+
+        def __init__(self, target_folder):
+            self.date_lst = []
+            self.close_lst = []
+            self.signal_lst = []
+            self.prev_signal_lst = []
+            self.action_lst = []
+            self.target_folder = target_folder
+
+        def save_csv(
+            self,
+            contents: List[TimeBarContent],
+            dframe,
+            signal: TradingSignals,
+            prev_signal: TradingSignals,
+            predict_result: MQL5Order,
+        ):
+            date = contents[-1].datetime
+            close = dframe["close"].iloc[-1]
+            self.date_lst.append(date)
+            self.close_lst.append(close)
+            self.signal_lst.append(signal.value)
+            self.prev_signal_lst.append(prev_signal.value)
+            self.action_lst.append(predict_result.action.value)
+
+        def output_csv(self):
+            output_lst = [
+                self.date_lst,
+                self.close_lst,
+                self.signal_lst,
+                self.prev_signal_lst,
+                self.action_lst,
+            ]
+            df_output = pd.DataFrame(output_lst).transpose()
+            df_output.columns = [
+                "date",
+                "close_price",
+                "signal",
+                "prev_signal",
+                "action",
+            ]
+            df_output.to_csv(f"{self.target_folder}/output.csv", index=False)
+
+        def write_strategies(self, data: MQL5Order):
+            logger.info(f"write strategy output {data.as_dict()}")
+            with open(f"{self.target_folder}/action_test.txt", "w") as outfile:
+                json.dump(data.as_dict(), outfile)
+
     def __init__(self, trading_algrithm: DecisionMaker, input_file: str):
         self.trading_algrithm = trading_algrithm
         self.input_file = input_file
         self.target_folder = os.path.dirname(input_file)
-
-    def write_strategies(self, data: MQL5Order):
-        logger.info(f"write strategy output {data.as_dict()}")
-        with open(f"{self.target_folder}/action_test.txt", "w") as outfile:
-            json.dump(data.as_dict(), outfile)
-
-    def save2csv(
-        self,
-        output_save,
-        predict_result: MQL5Order,
-        contents: List[TimeBarContent],
-        signal,
-        prev_signal,
-        df,
-    ):
-        print("--- calling save2csv")
-        output_save.save_csv(contents, df, signal, prev_signal, predict_result)
-        print("-- called save2csv")
 
     def cleanFile(self, filename):
         del_f = open(filename, "w")
@@ -64,12 +98,6 @@ class StratExecutor:
         contents = [x.split("\t") for x in contents]
         results = []
         for i in range(len(contents)):
-            # contents[i][0] = datetime.strptime(contents[i][0], "%Y.%m.%d %H:%M:%S")
-            # contents[i][1] = float(contents[i][1])  # open
-            # contents[i][2] = float(contents[i][2])  # high
-            # contents[i][3] = float(contents[i][3])  # low
-            # contents[i][4] = float(contents[i][4])  # close
-            # contents[i][5] = int(contents[i][5])  # tick value
             results.append(
                 TimeBarContent(
                     datetime=datetime.strptime(contents[i][0], "%Y.%m.%d %H:%M:%S"),
@@ -91,7 +119,6 @@ class StratExecutor:
         :return:
         """
         filename = self.input_file
-        output_save = OutputWriter(target_folder=self.target_folder)
 
         if os.path.isfile(filename) and os.stat(filename).st_size != 0:
             logger.info("File exist and not empty")
@@ -99,6 +126,7 @@ class StratExecutor:
             while True:
                 pre_Timebar = 0
                 check_point = 0
+                output_writer = self.__OutputWriter(target_folder=self.target_folder)
                 while True:
                     if os.stat(filename).st_size != 0:
                         try:
@@ -110,7 +138,7 @@ class StratExecutor:
                             curr_close_price = contents[-1].close
                             if curr_position == "Ending":
                                 # print(">>>------------------------<<<")
-                                output_save.output_csv()
+                                output_writer.output_csv()
                                 # print(">>> Server Stop <<<")
                                 break
 
@@ -139,22 +167,22 @@ class StratExecutor:
                                     logger.info(f"predict_result\t {predict_result}")
 
                                     # write the result to txt or csv
-                                    self.write_strategies(predict_result)
+                                    output_writer.write_strategies(predict_result)
+
                                     # self.cleanFile(filename)
 
-                                    self.save2csv(
-                                        output_save,
-                                        predict_result,
-                                        contents,
-                                        signal,
-                                        prev_signal,
-                                        df,
+                                    output_writer.save_csv(
+                                        predict_result=predict_result,
+                                        contents=contents,
+                                        signal=signal,
+                                        prev_signal=prev_signal,
+                                        dframe=df,
                                     )
 
                                     check_point += 1
 
                                     if check_point % 50 == 0:
-                                        output_save.output_csv()
+                                        output_writer.output_csv()
 
                                 else:
                                     time.sleep(0.003)
