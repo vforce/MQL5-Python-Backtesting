@@ -41,12 +41,14 @@ class MQL5Order:
     action: MQL5OrderTypes
     takeprofit: float = None
     stoploss: float = None
+    volume: float = 0.01
 
     def as_dict(self):
         return {
             "action": self.action.value,
             "takeprofit": self.takeprofit,
             "stoploss": self.stoploss,
+            "volume": self.volume,
         }
 
 
