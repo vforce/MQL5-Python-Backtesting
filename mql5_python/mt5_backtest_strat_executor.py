@@ -16,7 +16,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class StratExecutor:
+class MT5BacktestStratExecutor:
     """
     Watch the file `time_close_csv_test.csv` for new time bars, trigger the strategy to get signals,
     and write the output to `action_test.txt`
@@ -124,7 +124,7 @@ class StratExecutor:
             logger.info("File exist and not empty")
             # watch the file for multiple runs
             while True:
-                pre_Timebar = 0
+                pre_timebar = 0
                 check_point = 0
                 output_writer = self.__OutputWriter(target_folder=self.target_folder)
                 while True:
@@ -133,7 +133,7 @@ class StratExecutor:
                             contents: List[
                                 TimeBarContent
                             ] = self.convert_csv_file_to_history(filename)
-                            newTimebar = contents[-1].datetime
+                            new_timebar = contents[-1].datetime
                             curr_position = contents[-1].current_status
                             curr_close_price = contents[-1].close
                             if curr_position == "Ending":
@@ -143,11 +143,11 @@ class StratExecutor:
                                 break
 
                             else:
-                                if pre_Timebar != newTimebar:
-                                    pre_Timebar = copy.deepcopy(newTimebar)
+                                if pre_timebar != new_timebar:
+                                    pre_timebar = copy.deepcopy(new_timebar)
 
                                     logger.debug(
-                                        f"Timebar: {pre_Timebar}, close price = {curr_close_price}, cur position = {curr_position}"
+                                        f"Timebar: {pre_timebar}, close price = {curr_close_price}, cur position = {curr_position}"
                                     )
 
                                     # code from example2.py, send the data to the main_DecisionMaker.py

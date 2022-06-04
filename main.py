@@ -1,6 +1,6 @@
 # import your trading strategy here
 # from sma_ema import SimpleMAExponentialMA
-from mql5_python.strat_executor import StratExecutor
+from mql5_python.mt5_backtest_strat_executor import MT5BacktestStratExecutor
 from mql5_python.decision_maker import DecisionMaker
 
 # from trading_strategies.adx_crossover import AdxCrossover
@@ -53,5 +53,5 @@ logger = logging.getLogger(__name__)
 if __name__ == "__main__":
     file_path = "/Users/kdang/Library/Application Support/MetaTrader 5/Bottles/metatrader5/drive_c/Program Files/MetaTrader 5/Tester/Agent-127.0.0.1-3000/MQL5/Files/time_close_csv_test.csv"
     ai = DecisionMaker(SimpleMAExponentialMA())
-    executor = StratExecutor(ai, file_path)
+    executor = MT5BacktestStratExecutor(ai, file_path)
     executor.run()
